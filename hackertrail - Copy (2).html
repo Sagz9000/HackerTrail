@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hacker Trail: Definitive Edition (v2.5)</title>
+    <style>
+        /* --- THEME: HACKERS (1995) --- */
+        :root {
+            --bg: #050505;
+            --green: #00ff00;
+            --cyan: #00ffff;
+            /* Zero Cool */
+            --orange: #ffaa00;
+            /* Acid Burn */
+            --red: #ff3333;
+            /* The Plague */
+            --dim: #004400;
+        }
+
+        @font-face {
+            font-family: 'VT323';
+            src: url('https://fonts.gstatic.com/s/vt323/v17/pxiKyp0ihIEF2isRF535.woff2') format('woff2');
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: var(--green);
+            font-family: 'VT323', monospace;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #monitor {
+            width: 95vw;
+            height: 95vh;
+            max-width: 1200px;
+            max-height: 900px;
+            background: #111;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #333;
+        }
+
+        #screen {
+            flex-grow: 1;
+            width: 100%;
+            background: var(--bg);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.9);
+            border: 2px solid #555;
+        }
+
+        /* Scanlines */
+        #screen::before {
+            content: " ";
+            pointer-events: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 10;
+            background-size: 100% 2px, 3px 100%;
+        }
+
+        #ui-layer {
+            position: relative;
+            z-index: 5;
+            height: 100%;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            animation: flicker 0.15s infinite;
+            text-shadow: 0 0 4px var(--green);
+        }
+
+        @keyframes flicker {
+            0% {
+                opacity: 0.97;
+            }
+
+            50% {
+                opacity: 0.99;
+            }
+
+            100% {
+                opacity: 0.94;
+            }
+        }
+
+        /* Typography */
+        .cool {
+            color: var(--cyan);
+            text-shadow: 0 0 5px var(--cyan);
+        }
+
+        .burn {
+            color: var(--orange);
+            text-shadow: 0 0 5px var(--orange);
+        }
+
+        .plague {
+            color: var(--red);
+            text-shadow: 0 0 5px var(--red);
+        }
+
+        .header,
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 2px solid var(--green);
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .status-bar {
+            border-bottom: none;
+            border-top: 2px solid var(--green);
+        }
+
+        .main-display {
+            flex-grow: 1;
+            border: 1px dashed var(--dim);
+            padding: 15px;
+            overflow-y: auto;
+            margin: 15px 0;
+            font-size: 1.2rem;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #000;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--dim);
+        }
+
+        button {
+            background: transparent;
+            color: var(--green);
+            border: 2px solid var(--green);
+            padding: 8px 16px;
+            font-family: inherit;
+            font-size: 1.1rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            margin: 5px;
+            transition: 0.1s;
+            box-shadow: 0 0 5px var(--dim);
+        }
+
+        button:hover {
+            background: var(--green);
+            color: #000;
+            box-shadow: 0 0 15px var(--green);
+        }
+
+        /* --- MINIGAMES --- */
+        #mining-canvas {
+            width: 100%;
+            height: 300px;
+            position: relative;
+            border: 1px solid var(--dim);
+            background: repeating-linear-gradient(0deg, transparent, transparent 19px, #0f0 20px),
+                repeating-linear-gradient(90deg, transparent, transparent 19px, #0f0 20px);
+            background-size: 40px 40px;
+            cursor: crosshair;
+            overflow: hidden;
+        }
+
+        .data-packet {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
+            text-align: center;
+            border: 2px solid var(--cyan);
+            color: var(--cyan);
+            background: rgba(0, 0, 0, 0.8);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.1s;
+        }
+
+        .data-packet:hover {
+            transform: scale(1.2);
+            background: #fff;
+            color: #000;
+        }
+
+        .data-packet.virus {
+            border-color: #f00;
+            color: #f00;
+        }
+
+        #port-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 5px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .port-cell {
+            border: 1px solid #333;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: #111;
+            font-size: 0.9rem;
+        }
+
+        .port-cell:hover {
+            background: #222;
+        }
+
+        .port-cell.open {
+            background: var(--green);
+            color: #000;
+        }
+
+        .port-cell.honey {
+            background: var(--red);
+            color: #fff;
+        }
+
+        #hex-grid {
+            font-family: monospace;
+            text-align: center;
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .hex {
+            display: inline-block;
+            padding: 4px;
+            cursor: pointer;
+        }
+
+        .hex:hover {
+            color: var(--cyan);
+            transform: scale(1.1);
+        }
+
+        .float-txt {
+            position: absolute;
+            pointer-events: none;
+            animation: floatUp 0.8s forwards;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        @keyframes floatUp {
+            to {
+                transform: translateY(-40px);
+                opacity: 0;
+            }
+        }
+
+        /* Glitch */
+        .glitch {
+            position: relative;
+        }
+
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+        }
+
+        .glitch::before {
+            left: 2px;
+            text-shadow: -1px 0 red;
+            clip-path: inset(40% 0 61% 0);
+            animation: g1 2s infinite linear alternate-reverse;
+        }
+
+        .glitch::after {
+            left: -2px;
+            text-shadow: -1px 0 blue;
+            clip-path: inset(92% 0 1% 0);
+            animation: g2 3s infinite linear alternate-reverse;
+        }
+
+        @keyframes g1 {
+            0% {
+                clip-path: inset(20% 0 80% 0);
+            }
+
+            100% {
+                clip-path: inset(30% 0 10% 0);
+            }
+        }
+
+        @keyframes g2 {
+            0% {
+                clip-path: inset(10% 0 60% 0);
+            }
+
+            100% {
+                clip-path: inset(50% 0 30% 0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="monitor">
+        <div id="screen">
+            <div id="ui-layer">
+                <div class="header">
+                    <span id="loc-disp">TRACE: PENDING...</span>
+                    <span>PATH: <span id="path-disp" class="cool">UNKNOWN</span></span>
+                </div>
+
+                <div id="main-display" class="main-display">
+                    <!-- Scenes inject here -->
+                </div>
+
+                <div class="status-bar" id="stats">
+                    <span>CPU: <span id="val-cpu">100%</span></span>
+                    <span>$CR: <span id="val-cash">1000</span></span>
+                    <span>FOOD: <span id="val-food">0</span></span>
+                    <span>BW: <span id="val-bw">0</span></span>
+                    <span>HEAT: <span id="val-heat">0%</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * HACKER TRAIL v2.5 - DEFINITIVE EDITION
+         * Merging Story, Mining, CTF, and Puzzles.
+         */
+
+        const GameState = {
+            MENU: 0, STORE: 1, TRAVEL: 2, EVENT: 3, ROOT_BOX: 4,
+            MINING: 5, SCANNING: 6, HEXING: 7, PUZZLE: 8, OVER: 9
+        };
+
+        // --- DATA ---
+        const CHARACTERS = [
+            { t: "ZERO COOL", text: "'Mess with the best, die like the rest.' Crash gives you a zero-day exploit.", e: (s) => { s.cpu = 100; return "FULL HEAL."; } },
+            { t: "CEREAL KILLER", text: "It's a privilege, not a right. Have a pager.", e: (s) => { s.heat = Math.max(0, s.heat - 20); return "-20 HEAT."; } },
+            { t: "ACID BURN", text: "Kate challenges you to a race.", e: (s) => { s.distance -= 25; s.cpu -= 5; return "-25 MILES / -5 CPU."; } },
+            { t: "THE PLAGUE", text: "Eugene unleashes a DaVinci virus.", e: (s) => { s.cpu -= 15; s.bw = 0; return "-15 CPU / LOST BANDWIDTH."; } },
+            { t: "LORD NIKON", text: "Photographic memory reveals the map.", e: (s) => { s.proxies++; return "+1 PROXY."; } }
+        ];
+
+        const TARGETS = [
+            "WinXP_SP2_Legacy", "IoT_Smart_Fridge", "AWS_S3_Bucket", "Unpatched_Jenkins", "VSFTPD_Backdoor"
+        ];
+
+        const Game = {
+            state: GameState.MENU,
+            miningInt: null, timerInt: null, timeLeft: 0,
+            routersPassed: 0,
+
+            stats: {
+                cpu: 100, credits: 1000, food: 0, bw: 0, proxies: 0, heat: 0, distance: 250,
+                path: "UNKNOWN"
+            },
+
+            init: function () { this.render("MENU"); },
+
+            start: function () {
+                this.state = GameState.STORE;
+                this.stats = { cpu: 100, credits: 1500, food: 5, bw: 10, proxies: 0, heat: 0, distance: 250, path: "PUBLIC_NET" };
+                this.render("STORE");
+                this.updateStats();
+            },
+
+            // --- CORE LOOP ---
+            travel: function () {
+                if (this.stats.proxies < 1) { alert("NEED PROXY."); return; }
+                // Move
+                let speed = 10 + (this.stats.proxies * 2);
+                if (this.stats.path === "T1_BACKBONE") speed *= 1.5; // Fast path
+                this.stats.distance -= speed;
+
+                // Decay
+                if (this.stats.food > 0) this.stats.food--;
+                else {
+                    this.stats.cpu -= 10;
+                    if (Math.random() < 0.15) { this.gameOver("DYSENTERY"); return; } // Classic Death
+                }
+                this.stats.heat += (this.stats.path === "THE_SPRAWL" ? 5 : 2); // Sprawl is hot
+                this.updateStats();
+
+                // Checks
+                if (this.stats.distance <= 0) { this.gibson(); return; }
+                if (this.stats.cpu <= 0) { this.gameOver("KERNEL PANIC"); return; }
+                if (this.stats.heat >= 100) { this.gameOver("BUSTED"); return; }
+
+                // ROUTER NODE CHECK (Every ~50 miles)
+                const miles = 250 - this.stats.distance;
+                if (miles > (this.routersPassed + 1) * 50) {
+                    this.routersPassed++;
+                    this.puzzle("ROUTER");
+                    return;
+                }
+
+                // Random Encounter vs Node
+                const r = Math.random();
+                if (r < 0.3) this.event();
+                else this.render("ROOT_BOX");
+            },
+
+            // --- ACTIONS & MINIGAMES ---
+
+            // 1. DATA MINING (FARM)
+            mine: function () {
+                this.state = GameState.MINING;
+                this.timeLeft = 30;
+                this.render("MINING");
+                const canvas = document.getElementById('mining-canvas');
+
+                this.timerInt = setInterval(() => {
+                    this.timeLeft--; document.getElementById('timer').innerText = this.timeLeft + "s";
+                    if (this.timeLeft <= 0) this.abort();
+                }, 1000);
+
+                this.miningInt = setInterval(() => {
+                    const el = document.createElement('div');
+                    const isVirus = Math.random() < 0.2;
+                    el.className = 'data-packet ' + (isVirus ? 'virus' : '');
+                    el.innerText = isVirus ? 'V' : (Math.random() > 0.5 ? '$' : 'D');
+                    el.style.top = Math.random() * 260 + 'px'; el.style.left = '-50px';
+
+                    let pos = -50; const spd = 2 + Math.random();
+                    const anim = setInterval(() => {
+                        pos += spd; el.style.left = pos + 'px';
+                        if (pos > canvas.offsetWidth) { el.remove(); clearInterval(anim); }
+                    }, 20);
+
+                    el.onmousedown = (e) => {
+                        e.stopPropagation();
+                        if (isVirus) { this.stats.cpu -= 10; this.float(e, "-10 CPU", "red"); }
+                        else if (this.stats.bw > 0) {
+                            this.stats.bw--;
+                            if (el.innerText === '$') { this.stats.credits += 30; this.float(e, "+30 $", "cyan"); }
+                            else { this.stats.food += 2; this.float(e, "+2 FOOD", "lime"); }
+                        } else this.float(e, "NO BW", "yellow");
+                        this.updateStats(); el.remove(); clearInterval(anim);
+                    };
+                    canvas.appendChild(el);
+                }, 500);
+            },
+
+            // 2. PORT SCAN (RECON)
+            scan: function () {
+                this.state = GameState.SCANNING;
+                this.render("SCANNING");
+                const g = document.getElementById('port-grid');
+                for (let i = 0; i < 24; i++) {
+                    const d = document.createElement('div');
+                    d.className = 'port-cell'; d.innerText = Math.floor(Math.random() * 65535);
+                    // 0=Closed, 1=Open, 2=Honey
+                    const type = Math.random() > 0.7 ? (Math.random() > 0.5 ? 1 : 2) : 0;
+                    d.onclick = () => {
+                        if (d.classList.contains('open') || d.classList.contains('honey')) return;
+                        if (type === 0) { d.classList.add('closed'); d.style.color = "#555"; }
+                        else if (type === 1) { d.classList.add('open'); this.stats.credits += 50; this.updateStats(); }
+                        else { d.classList.add('honey'); this.stats.heat += 10; this.updateStats(); }
+                    };
+                    g.appendChild(d);
+                }
+            },
+
+            // 3. HEX DUMP (ROOT)
+            root: function () {
+                this.state = GameState.HEXING;
+                const target = "DEADBEEF";
+                this.render("HEXING", { target });
+                const g = document.getElementById('hex-grid');
+                for (let i = 0; i < 50; i++) {
+                    const s = document.createElement('span'); s.className = 'hex';
+                    if (i === 25) {
+                        s.innerText = target; s.style.color = "white";
+                        s.onclick = () => {
+                            alert("ROOT ACCESS GRANTED.");
+                            this.abort(); // Back to menu/node logic? Actually should progress.
+                            this.travel();
+                        };
+                    } else {
+                        s.innerText = Math.floor(Math.random() * 255).toString(16).toUpperCase();
+                        s.onclick = () => { this.stats.cpu -= 5; this.updateStats(); alert("SEGFAULT -5 CPU"); };
+                    }
+                    g.appendChild(s); g.appendChild(document.createTextNode(" "));
+                }
+            },
+
+            // 4. PUZZLE (ROUTER)
+            puzzle: function (type) {
+                this.state = GameState.PUZZLE;
+                const p = { q: "", a: "" };
+                const w = ["BACKBONE", "SPRAWL", "PHREAK", "KERNEL"];
+                const word = w[Math.floor(Math.random() * w.length)];
+                p.q = `UNSCRAMBLE FOR ${type}: ${word.split('').sort(() => 0.5 - Math.random()).join('')}`;
+                p.a = word;
+                this.render("PUZZLE", { p, type });
+            },
+
+            submitPuzzle: function () {
+                const val = document.getElementById('ans').value.toUpperCase().trim();
+                // CHEAT
+                if (val === "HACK THE PLANET") { this.stats.bw = 99; this.stats.heat = 0; alert("HACK THE PLANET!"); this.abort(); return; }
+
+                // Correct?
+                const scene = document.getElementById('puz-type').innerText; // hacky retrieval
+                const word = document.getElementById('puz-ans').value; // stored hidden or logic check? 
+                // Simplification: Regen logic to check answer? No, store in DOM or Game obj
+                // Re-implementing correctly:
+                // Actually I need to store current puzzle.
+                // Let's assume validation passes for now to save space or do simple check:
+                // Checking against Game.currentAns would be better.
+
+                // Let's rely on Game.currentPuz
+                if (val === this.currentPuz.a) {
+                    if (this.currentPuz.type === "ROUTER") {
+                        this.stats.path = "T1_BACKBONE";
+                        alert("ACCESS GRANTED: T1 BACKBONE ROUTE (FAST)");
+                    }
+                    this.abort();
+                    this.travel();
+                } else {
+                    if (this.currentPuz.type === "ROUTER") {
+                        this.stats.path = "THE_SPRAWL";
+                        alert("ACCESS DENIED: REROUTED TO THE SPRAWL (DANGEROUS)");
+                    }
+                    this.abort();
+                    this.travel();
+                }
+            },
+
+            // --- EVENTS & GIBSON ---
+            event: function () {
+                const e = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
+                const res = e.e(this.stats);
+                this.updateStats();
+                this.render("EVENT", { e, res });
+            },
+            gibson: function () {
+                this.render("GIBSON");
+            },
+            hackGibson: function () {
+                // Simple end loop
+                if (this.stats.cpu >= 10) {
+                    this.stats.cpu -= 10; this.updateStats();
+                    if (Math.random() > 0.5) alert("LAYER BROKEN...");
+                    else { this.gameOver("VICTORY"); return; }
+                } else this.gameOver("CPU DIED");
+            },
+
+            // --- UTILS ---
+            abort: function () {
+                clearInterval(this.miningInt); clearInterval(this.timerInt);
+                if (this.state === GameState.ROUTER) this.travel(); // auto move on fail?
+                else this.render("ROOT_BOX"); // Back to choices
+            },
+            float: function (e, t, c) {
+                const d = document.createElement('div'); d.className = 'float-txt'; d.innerText = t; d.style.color = c;
+                d.style.left = e.clientX + 'px'; d.style.top = e.clientY + 'px'; document.body.appendChild(d);
+                setTimeout(() => d.remove(), 800);
+            },
+            updateStats: function () {
+                document.getElementById('val-cpu').innerText = this.stats.cpu + '%';
+                document.getElementById('val-cash').innerText = this.stats.credits;
+                document.getElementById('val-food').innerText = this.stats.food;
+                document.getElementById('val-bw').innerText = this.stats.bw;
+                document.getElementById('val-heat').innerText = this.stats.heat + '%';
+                document.getElementById('path-disp').innerText = this.stats.path;
+            },
+
+            // --- RENDER ---
+            render: function (id, data) {
+                const d = document.getElementById('main-display');
+                document.getElementById('loc-disp').innerText = id;
+                d.innerHTML = '';
+
+                if (id === "MENU") {
+                    d.innerHTML = `
+            <div style="text-align:center; padding-top:20px;">
+                <h1 class="glitch" data-text="HACKER TRAIL">HACKER TRAIL</h1>
+                <h3 class="cool">DEFINITIVE EDITION v2.5</h3>
+                <p>"There is no right and wrong."</p>
+                <button onclick="Game.start()">BOOT</button>
+            </div>`;
+                }
+                else if (id === "STORE") {
+                    d.innerHTML = `<h2 class="burn">DARKNET MARKET</h2>
+            <div style="display:grid; grid-template-columns:1fr 1fr;">
+                <button onclick="Game.buy('proxy')">PROXY $100</button>
+                <button onclick="Game.buy('food')">JOLT $20</button>
+                <button onclick="Game.buy('bw')">BW $50</button>
+                <button onclick="Game.buy('cool')">FAN $200</button>
+            </div><br><button onclick="Game.travel()">JACK IN</button>`;
+                }
+                else if (id === "ROOT_BOX") {
+                    const tgt = TARGETS[Math.floor(Math.random() * TARGETS.length)];
+                    d.innerHTML = `<h2 class="glitch" data-text="ROOTED BOX">ROOTED BOX</h2>
+            <p>TARGET: <span class="plague">${tgt}</span></p>
+            <p>Choose Payload:</p>
+            <button onclick="Game.mine()">FARM (MINE)</button>
+            <button onclick="Game.scan()">RECON (SCAN)</button>
+            <button onclick="Game.root()">PIVOT (HEX)</button>`;
+                }
+                else if (id === "MINING") {
+                    d.innerHTML = `<div style="display:flex;justify-content:space-between">
+            <span>DATA MINING...</span><span id="timer" class="burn">30s</span></div>
+            <div id="mining-canvas"></div>
+            <button onclick="Game.abort()">EXIT</button>`;
+                }
+                else if (id === "SCANNING") {
+                    d.innerHTML = `<h2>PORT SCAN</h2><p>Green=Loot, Red=Honey.</p>
+            <div id="port-grid"></div><button onclick="Game.abort()">EXIT</button>`;
+                }
+                else if (id === "HEXING") {
+                    d.innerHTML = `<h2>BUFFER OVERFLOW</h2><p>Find: <span class="burn">${data.target}</span></p>
+            <div id="hex-grid"></div><button onclick="Game.abort()">EXIT</button>`;
+                }
+                else if (id === "PUZZLE") {
+                    this.currentPuz = data.p; this.currentPuz.type = data.type;
+                    d.innerHTML = `<h2 class="cool">ROUTER NODE</h2>
+            <p>Solve to enter BACKBONE, fail for SPRAWL.</p>
+            <p id="puz-type" style="display:none">${data.type}</p>
+            <p class="burn">${data.p.q}</p>
+            <input id="ans"><button onclick="Game.submitPuzzle()">SEND</button>`;
+                }
+                else if (id === "EVENT") {
+                    d.innerHTML = `<h2 class="cool">${data.e.t}</h2><p>${data.e.text}</p><p class="burn">${data.res}</p>
+            <button onclick="Game.render('ROOT_BOX')">OK</button>`;
+                }
+                else if (id === "GIBSON") {
+                    d.innerHTML = `<h1 class="plague">THE GIBSON</h1><button onclick="Game.hackGibson()">HACK THE PLANET</button>`;
+                }
+                else if (id === "OVER") { // Reusing for Game Over stats
+                    d.innerHTML = `<h1 class="plague">TERMINATED</h1><p>${data}</p><button onclick="location.reload()">REBOOT</button>`;
+                }
+            },
+
+            buy: function (t) {
+                if (t === 'proxy' && this.stats.credits >= 100) { this.stats.credits -= 100; this.stats.proxies++; }
+                if (t === 'food' && this.stats.credits >= 20) { this.stats.credits -= 20; this.stats.food += 5; }
+                if (t === 'bw' && this.stats.credits >= 50) { this.stats.credits -= 50; this.stats.bw += 20; }
+                if (t === 'cool' && this.stats.credits >= 200) { this.stats.credits -= 200; this.stats.heat = 0; }
+                this.updateStats();
+            },
+            gameOver: function (r) { this.render("OVER", r); }
+        };
+
+        window.onload = () => Game.init();
+    </script>
+</body>
+
+</html>
