@@ -1,6 +1,9 @@
 # Hacker Trail v2.8
 
+![Main Menu](pictures/main.png)
+
 A retro-styled hacking adventure inspired by the classic Oregon Trail. Navigate the sprawling net, manage your resources, and face off against the legendary Gibson.
+
 
 ## 🕹️ Gameplay
 
